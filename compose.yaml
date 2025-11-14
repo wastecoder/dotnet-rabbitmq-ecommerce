@@ -1,0 +1,16 @@
+﻿services:
+  ecommerce-gateway-postgres:
+    image: postgres:18
+    container_name: ecommerce-gateway-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: gateway
+      POSTGRES_PASSWORD: gateway
+      POSTGRES_DB: gatewaydb
+    ports:
+      - "5400:5432"
+    volumes:
+      - gateway-postgres-data:/var/lib/postgresql
+
+volumes:
+  gateway-postgres-data:
