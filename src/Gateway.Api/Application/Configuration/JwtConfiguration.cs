@@ -6,7 +6,7 @@ namespace Gateway.Api.Application.Configuration;
 
 public static class JwtConfiguration
 {
-    public static void AddJwtConfiguration(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
         var key = Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!);
 
@@ -29,5 +29,7 @@ public static class JwtConfiguration
                     IssuerSigningKey = new SymmetricSecurityKey(key)
                 };
             });
+
+        return services;
     }
 }
