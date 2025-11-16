@@ -2,7 +2,7 @@
 using System.Security.Claims;
 using System.Text;
 using Gateway.Api.Domain.DTOs;
-using Gateway.Api.Domain.Enums;
+using Gateway.Api.Domain.Entities;
 using Gateway.Api.Domain.Interfaces;
 using Microsoft.IdentityModel.Tokens;
 
@@ -10,31 +10,51 @@ namespace Gateway.Api.Application.Services;
 
 public class TokenService(IConfiguration configuration) : ITokenService
 {
-    public LoginResponse GenerateToken(string email, UserRole role)
+    private readonly byte[] _key =
+        Encoding.UTF8.GetBytes(configuration["Jwt:Key"]
+                               ?? throw new InvalidOperationException("Jwt:Key not configured"));
+
+    public TokenResult GenerateToken(UserAccount user)
     {
-        var expiration = DateTime.UtcNow.AddMinutes(
-            double.Parse(configuration["Jwt:ExpiresInMinutes"]!)
-        );
+        var expiresInMinutes = double.Parse(configuration["Jwt:ExpiresInMinutes"]!);
+        var expiresAt = DateTime.UtcNow.AddMinutes(expiresInMinutes);
 
-        var key = Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!);
-        var credentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256);
-
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.Name, email),
-            new(ClaimTypes.Role, role.ToString())
-        };
-
-        var token = new JwtSecurityToken(
-            issuer: configuration["Jwt:Issuer"],
-            audience: configuration["Jwt:Audience"],
-            claims: claims,
-            expires: expiration,
-            signingCredentials: credentials
-        );
+        var claims = CreateClaims(user);
+        var credentials = CreateSigningCredentials();
+        var token = CreateJwtToken(claims, expiresAt, credentials);
 
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
-        return new LoginResponse(tokenString, expiration);
+        return new TokenResult(tokenString, expiresAt);
+    }
+
+    private static List<Claim> CreateClaims(UserAccount user)
+    {
+        return new List<Claim>
+        {
+            new(ClaimTypes.Name, user.Email),
+            new(ClaimTypes.Role, user.Role.ToString())
+        };
+    }
+
+    private SigningCredentials CreateSigningCredentials()
+    {
+        return new SigningCredentials(
+            new SymmetricSecurityKey(_key),
+            SecurityAlgorithms.HmacSha256);
+    }
+
+    private JwtSecurityToken CreateJwtToken(
+        IEnumerable<Claim> claims,
+        DateTime expiresAt,
+        SigningCredentials credentials)
+    {
+        return new JwtSecurityToken(
+            issuer: configuration["Jwt:Issuer"],
+            audience: configuration["Jwt:Audience"],
+            claims: claims,
+            expires: expiresAt,
+            signingCredentials: credentials
+        );
     }
 }

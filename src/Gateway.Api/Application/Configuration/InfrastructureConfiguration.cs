@@ -1,6 +1,7 @@
 ﻿using Gateway.Api.Application.Services;
 using Gateway.Api.Domain.Interfaces;
 using Gateway.Api.Infrastructure.Database;
+using Gateway.Api.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Gateway.Api.Application.Configuration;
@@ -16,7 +17,10 @@ public static class InfrastructureConfiguration
             options.UseNpgsql(configuration.GetConnectionString("GatewayDb"));
         });
 
+        services.AddScoped<IUserRepository, UserRepository>();
+
         services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }
