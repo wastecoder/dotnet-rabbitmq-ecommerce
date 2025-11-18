@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using Gateway.Api.Presentation.Middlewares;
 
 namespace Gateway.Api.Application.Configuration;
 
@@ -15,11 +16,15 @@ public static class ApiConfiguration
 
         services.AddEndpointsApiExplorer();
 
+        services.AddExceptionHandler<GlobalExceptionHandler>();
+        services.AddProblemDetails();
+
         return services;
     }
 
     public static WebApplication UseApiConfiguration(this WebApplication app)
     {
+        app.UseExceptionHandler();
         app.UseHttpsRedirection();
         app.UseAuthentication();
         app.UseAuthorization();

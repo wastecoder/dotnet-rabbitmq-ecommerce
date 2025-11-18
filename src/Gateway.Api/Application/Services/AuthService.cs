@@ -1,6 +1,7 @@
 ﻿using Gateway.Api.Domain.DTOs;
 using Gateway.Api.Domain.Entities;
 using Gateway.Api.Domain.Interfaces;
+using Gateway.Api.Presentation.Models;
 using Microsoft.AspNetCore.Identity;
 
 namespace Gateway.Api.Application.Services;
@@ -14,7 +15,7 @@ public class AuthService(
 {
     private readonly PasswordHasher<UserAccount> _passwordHasher = new();
 
-    public async Task<AuthResult> LoginAsync(
+    public async Task<ApiResponse<TokenResult>> LoginAsync(
         LoginRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -22,7 +23,7 @@ public class AuthService(
 
         var user = await userRepository.GetByEmailAsync(normalizedEmail, cancellationToken);
         if (user is null)
-            return new AuthResult(false, null, new ErrorResponse("Invalid credentials"));
+            throw new UnauthorizedAccessException("Invalid credentials.");
 
         var verificationResult = _passwordHasher.VerifyHashedPassword(
             user,
@@ -30,10 +31,10 @@ public class AuthService(
             request.Password);
 
         if (verificationResult == PasswordVerificationResult.Failed)
-            return new AuthResult(false, null, new ErrorResponse("Invalid credentials"));
+            throw new UnauthorizedAccessException("Invalid credentials.");
 
         var tokenResult = tokenService.GenerateToken(user);
 
-        return new AuthResult(true, tokenResult, null);
+        return new ApiResponse<TokenResult>(tokenResult);
     }
 }

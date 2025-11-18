@@ -1,4 +1,5 @@
 ﻿using Gateway.Api.Domain.DTOs;
+using Gateway.Api.Presentation.Models;
 
 namespace Gateway.Api.Domain.Interfaces;
 
@@ -8,5 +9,5 @@ public interface IAuthService
     /// Attempt to authenticate a user using email + password.
     /// Returns an AuthResult containing a success flag, a TokenResult if successful, or an ErrorResponse if failed.
     /// </summary>
-    Task<AuthResult> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default);
+    Task<ApiResponse<TokenResult>> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default);
 }
