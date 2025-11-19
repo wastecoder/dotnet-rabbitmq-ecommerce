@@ -1,4 +1,5 @@
-﻿using Gateway.Api.Domain.DTOs;
+﻿using Gateway.Api.Presentation.Contracts.Requests;
+using Gateway.Api.Presentation.Contracts.Responses;
 using Gateway.Api.Presentation.Models;
 
 namespace Gateway.Api.Domain.Interfaces;

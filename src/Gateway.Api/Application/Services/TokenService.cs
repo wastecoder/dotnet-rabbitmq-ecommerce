@@ -1,9 +1,9 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Gateway.Api.Domain.DTOs;
 using Gateway.Api.Domain.Entities;
 using Gateway.Api.Domain.Interfaces;
+using Gateway.Api.Presentation.Contracts.Responses;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Gateway.Api.Application.Services;

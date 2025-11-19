@@ -1,6 +1,7 @@
-﻿using Gateway.Api.Domain.DTOs;
-using Gateway.Api.Domain.Entities;
+﻿using Gateway.Api.Domain.Entities;
 using Gateway.Api.Domain.Interfaces;
+using Gateway.Api.Presentation.Contracts.Requests;
+using Gateway.Api.Presentation.Contracts.Responses;
 using Gateway.Api.Presentation.Models;
 using Microsoft.AspNetCore.Identity;
 

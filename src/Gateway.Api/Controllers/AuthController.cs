@@ -1,5 +1,5 @@
-﻿using Gateway.Api.Domain.DTOs;
-using Gateway.Api.Domain.Interfaces;
+﻿using Gateway.Api.Domain.Interfaces;
+using Gateway.Api.Presentation.Contracts.Requests;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Gateway.Api.Controllers;

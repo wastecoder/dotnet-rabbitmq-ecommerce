@@ -1,5 +1,5 @@
-﻿using Gateway.Api.Domain.DTOs;
-using Gateway.Api.Domain.Entities;
+﻿using Gateway.Api.Domain.Entities;
+using Gateway.Api.Presentation.Contracts.Responses;
 
 namespace Gateway.Api.Domain.Interfaces;
 

@@ -1,6 +1,6 @@
 ﻿using Gateway.Api.Domain.Enums;
 
-namespace Gateway.Api.Domain.DTOs;
+namespace Gateway.Api.Presentation.Contracts.Responses;
 
 public record UserResponse(
     Guid Id,
