@@ -8,6 +8,7 @@ builder.Services.AddSwaggerDocumentation();
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddGatewayInfrastructure(builder.Configuration);
 builder.Services.AddCorsConfiguration(builder.Configuration);
+builder.Services.AddReverseProxyConfiguration(builder.Configuration);
 
 var app = builder.Build();
 
@@ -17,5 +18,6 @@ app.ApplyMigrationsAndSeed();
 // Pipeline
 app.UseApiConfiguration();
 app.UseSwaggerDocumentation();
+app.MapReverseProxy();
 
 app.Run();
