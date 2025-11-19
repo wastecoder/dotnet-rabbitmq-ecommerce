@@ -1,4 +1,6 @@
 ﻿using System.Text.Json.Serialization;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Gateway.Api.Presentation.Middlewares;
 
 namespace Gateway.Api.Application.Configuration;
@@ -13,6 +15,9 @@ public static class ApiConfiguration
             {
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
+
+        services.AddValidatorsFromAssembly(typeof(Program).Assembly);
+        services.AddFluentValidationAutoValidation();
 
         services.AddEndpointsApiExplorer();
 
