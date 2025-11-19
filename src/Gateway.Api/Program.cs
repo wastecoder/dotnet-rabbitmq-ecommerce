@@ -7,6 +7,7 @@ builder.Services.AddApiConfiguration();
 builder.Services.AddSwaggerDocumentation();
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddGatewayInfrastructure(builder.Configuration);
+builder.Services.AddCorsConfiguration(builder.Configuration);
 
 var app = builder.Build();
 
