@@ -12,5 +12,19 @@
     volumes:
       - gateway-postgres-data:/var/lib/postgresql
 
+  ecommerce-inventory-postgres:
+    image: postgres:18
+    container_name: ecommerce-inventory-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: inventory
+      POSTGRES_PASSWORD: inventory
+      POSTGRES_DB: inventorydb
+    ports:
+      - "5401:5432"
+    volumes:
+      - inventory-postgres-data:/var/lib/postgresql
+
 volumes:
   gateway-postgres-data:
+  inventory-postgres-data:
