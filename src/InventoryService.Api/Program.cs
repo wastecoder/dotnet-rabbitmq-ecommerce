@@ -1,5 +1,8 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using InventoryService.Api.Application.Mapping;
 using InventoryService.Api.Application.Services;
+using InventoryService.Api.Application.Validation;
 using InventoryService.Api.Domain.Interfaces;
 using InventoryService.Api.Infrastructure.Database;
 using InventoryService.Api.Infrastructure.Repositories;
@@ -15,10 +18,20 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<InventoryDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("InventoryDb")));
 
+// Register controllers
+builder.Services.AddControllers();
+
+// Register application services
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
 
-builder.Services.AddAutoMapper(typeof(ProductMappingProfile));
+// Register AutoMapper
+builder.Services.AddAutoMapper(cfg => cfg.AddProfile<ProductMappingProfile>(), typeof(ProductMappingProfile).Assembly);
+
+// Register validators
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
+builder.Services.AddValidatorsFromAssemblyContaining<ProductRequestValidator>();
 
 var app = builder.Build();
 
@@ -38,7 +51,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Test endpoint
-app.MapGet("/", () => "Inventory API is running...");
+// Use controllers
+app.MapControllers();
 
 app.Run();
