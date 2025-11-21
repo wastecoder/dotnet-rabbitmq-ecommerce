@@ -2,6 +2,7 @@
 using InventoryService.Api.Domain.Interfaces;
 using InventoryService.Api.Presentation.Contracts.Requests;
 using InventoryService.Api.Presentation.Contracts.Responses;
+using InventoryService.Api.Presentation.Factories;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InventoryService.Api.Presentation.Controllers;
@@ -14,7 +15,7 @@ public class ProductsController(IProductService service, IMapper mapper) : Contr
     public async Task<ActionResult<IEnumerable<ProductResponse>>> GetAll()
     {
         var products = await service.GetAllAsync();
-        return Ok(mapper.Map<IEnumerable<ProductResponse>>(products));
+        return Ok(ApiResponseFactory.Success(mapper.Map<IEnumerable<ProductResponse>>(products)));
     }
 
     [HttpGet("{id:guid}")]
@@ -25,12 +26,11 @@ public class ProductsController(IProductService service, IMapper mapper) : Contr
         if (product is null)
             return NotFound($"Product with ID {id} not found.");
 
-        return Ok(mapper.Map<ProductResponse>(product));
+        return Ok(ApiResponseFactory.Success(mapper.Map<ProductResponse>(product)));
     }
 
     [HttpPost]
-    public async Task<ActionResult<ProductResponse>> Create(
-        [FromBody] ProductRequest request)
+    public async Task<ActionResult<ProductResponse>> Create([FromBody] ProductRequest request)
     {
         var product = await service.CreateAsync(request);
 
@@ -38,20 +38,18 @@ public class ProductsController(IProductService service, IMapper mapper) : Contr
         return CreatedAtAction(
             nameof(GetById), 
             new { id = response.Id },
-            response);
+            ApiResponseFactory.Created(response));
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<ActionResult<ProductResponse>> Update(
-        Guid id,
-        [FromBody] ProductRequest request)
+    public async Task<ActionResult<ProductResponse>> Update(Guid id, [FromBody] ProductRequest request)
     {
         var updated = await service.UpdateAsync(id, request);
 
         if (updated is null)
             return NotFound($"Product with ID {id} not found.");
 
-        return Ok(mapper.Map<ProductResponse>(updated));
+        return Ok(ApiResponseFactory.Updated(mapper.Map<ProductResponse>(updated)));
     }
 
     [HttpDelete("{id:guid}")]
