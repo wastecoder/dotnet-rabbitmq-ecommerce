@@ -1,4 +1,7 @@
+using InventoryService.Api.Application.Services;
+using InventoryService.Api.Domain.Interfaces;
 using InventoryService.Api.Infrastructure.Database;
+using InventoryService.Api.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +13,9 @@ builder.Services.AddSwaggerGen();
 // Register DbContext
 builder.Services.AddDbContext<InventoryDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("InventoryDb")));
+
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IProductService, ProductService>();
 
 var app = builder.Build();
 
