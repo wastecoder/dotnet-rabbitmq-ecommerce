@@ -1,13 +1,19 @@
 ﻿using InventoryService.Api.Domain.Entities;
 using InventoryService.Api.Domain.Interfaces;
+using InventoryService.Api.Presentation.Contracts.Requests;
 
 namespace InventoryService.Api.Application.Services;
 
 public class ProductService(IProductRepository repository) : IProductService
 {
-    public async Task<Product> CreateAsync(string name, decimal price, int quantity, string description)
+    public async Task<Product> CreateAsync(ProductRequest request)
     {
-        var product = new Product(name, price, quantity, description);
+        var product = new Product(
+            request.Name, 
+            request.Price, 
+            request.Quantity, 
+            request.Description ?? string.Empty
+        );
 
         await repository.AddAsync(product);
         await repository.SaveChangesAsync();
@@ -20,18 +26,18 @@ public class ProductService(IProductRepository repository) : IProductService
         return await repository.GetByIdAsync(id);
     }
 
-    public async Task<List<Product>> GetAllAsync()
+    public async Task<IEnumerable<Product>> GetAllAsync()
     {
         return await repository.GetAllAsync();
     }
 
-    public async Task<Product?> UpdateAsync(Guid id, string name, decimal price, int quantity, string description)
+    public async Task<Product?> UpdateAsync(Guid id, ProductRequest request)
     {
         var product = await repository.GetByIdAsync(id);
         if (product is null)
             return null;
 
-        product.Update(name, price, quantity, description);
+        product.Update(request);
 
         await repository.UpdateAsync(product);
         await repository.SaveChangesAsync();

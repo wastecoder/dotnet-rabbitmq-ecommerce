@@ -1,4 +1,6 @@
-﻿namespace InventoryService.Api.Domain.Entities;
+﻿using InventoryService.Api.Presentation.Contracts.Requests;
+
+namespace InventoryService.Api.Domain.Entities;
 
 public class Product
 {
@@ -26,12 +28,12 @@ public class Product
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 
-    public void Update(string name, decimal price, int quantity, string description)
+    public void Update(ProductRequest request)
     {
-        Name = name;
-        Price = price;
-        Quantity = quantity;
-        Description = description;
+        Name = request.Name;
+        Price = request.Price;
+        Quantity = request.Quantity;
+        Description = request.Description ?? string.Empty;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 }
