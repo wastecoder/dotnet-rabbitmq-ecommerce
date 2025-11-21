@@ -1,3 +1,4 @@
+using InventoryService.Api.Application.Mapping;
 using InventoryService.Api.Application.Services;
 using InventoryService.Api.Domain.Interfaces;
 using InventoryService.Api.Infrastructure.Database;
@@ -16,6 +17,8 @@ builder.Services.AddDbContext<InventoryDbContext>(options =>
 
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
+
+builder.Services.AddAutoMapper(typeof(ProductMappingProfile));
 
 var app = builder.Build();
 
