@@ -32,6 +32,10 @@ builder.Services.AddAutoMapper(cfg => cfg.AddProfile<ProductMappingProfile>(), t
 // Register validators
 builder.Services.AddValidatorsFromAssemblyContaining<ProductRequestValidator>();
 
+// Register exception handling
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
 
 // Run database seeding
@@ -48,7 +52,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseMiddleware<GlobalExceptionHandler>();
+app.UseExceptionHandler();
 
 app.UseHttpsRedirection();
 

@@ -1,109 +1,89 @@
-﻿using System.Net;
-using FluentValidation;
+﻿using FluentValidation;
 using InventoryService.Api.Domain.Enums;
 using InventoryService.Api.Domain.Exceptions;
-using InventoryService.Api.Presentation.Contracts.Responses;
 using InventoryService.Api.Presentation.Factories;
+using Microsoft.AspNetCore.Diagnostics;
 
 namespace InventoryService.Api.Presentation.Middlewares;
 
-public class GlobalExceptionHandler(RequestDelegate next)
+public class GlobalExceptionHandler : IExceptionHandler
 {
-    public async Task InvokeAsync(HttpContext context)
+    public async ValueTask<bool> TryHandleAsync(
+        HttpContext context,
+        Exception exception,
+        CancellationToken cancellationToken)
     {
-        try
-        {
-            await next(context);
-        }
-        catch (Exception ex)
-        {
-            await HandleExceptionAsync(context, ex);
-        }
-    }
-
-    private static async Task HandleExceptionAsync(HttpContext context, Exception ex)
-    {
-        ErrorResponse response;
         int statusCode;
+        ErrorType errorType;
+        string title;
+        string? detail = null;
+        IEnumerable<string>? errors = null;
 
-        switch (ex)
+        switch (exception)
         {
-            // FluentValidation Exceptions
+            // FluentValidation
             case ValidationException validationEx:
-                statusCode = (int)HttpStatusCode.BadRequest;
-                response = ErrorResponseFactory.Create(
-                    context,
-                    ErrorType.ValidationError,
-                    title: "Validation Error",
-                    status: statusCode,
-                    errors: validationEx.Errors.Select(e => e.ErrorMessage)
-                );
+                statusCode = StatusCodes.Status400BadRequest;
+                errorType = ErrorType.ValidationError;
+                title = "Validation Error";
+                errors = validationEx.Errors.Select(e => e.ErrorMessage);
                 break;
 
             // Unauthorized
             case UnauthorizedAccessException:
-                statusCode = (int)HttpStatusCode.Unauthorized;
-                response = ErrorResponseFactory.Create(
-                    context,
-                    ErrorType.Unauthorized,
-                    title: "Unauthorized",
-                    status: statusCode,
-                    detail: "You are not authorized to perform this action."
-                );
+                statusCode = StatusCodes.Status401Unauthorized;
+                errorType = ErrorType.Unauthorized;
+                title = "Unauthorized";
+                detail = "You are not authorized to perform this action.";
                 break;
 
             // Forbidden
             case AccessViolationException:
-                statusCode = (int)HttpStatusCode.Forbidden;
-                response = ErrorResponseFactory.Create(
-                    context,
-                    ErrorType.Forbidden,
-                    title: "Forbidden",
-                    status: statusCode,
-                    detail: "You do not have permission to access this resource."
-                );
+                statusCode = StatusCodes.Status403Forbidden;
+                errorType = ErrorType.Forbidden;
+                title = "Forbidden";
+                detail = "You do not have permission to access this resource.";
                 break;
 
             // NotFoundException
             case NotFoundException notFoundEx:
-                statusCode = (int)HttpStatusCode.NotFound;
-                response = ErrorResponseFactory.Create(
-                    context,
-                    ErrorType.NotFound,
-                    title: "Not Found",
-                    status: statusCode,
-                    detail: notFoundEx.Message
-                );
+                statusCode = StatusCodes.Status404NotFound;
+                errorType = ErrorType.NotFound;
+                title = "Not Found";
+                detail = notFoundEx.Message;
                 break;
 
             // Conflict
             case InvalidOperationException invalidOpEx:
-                statusCode = (int)HttpStatusCode.Conflict;
-                response = ErrorResponseFactory.Create(
-                    context,
-                    ErrorType.Conflict,
-                    title: "Conflict",
-                    status: statusCode,
-                    detail: invalidOpEx.Message
-                );
+                statusCode = StatusCodes.Status409Conflict;
+                errorType = ErrorType.Conflict;
+                title = "Conflict";
+                detail = invalidOpEx.Message;
                 break;
 
             // Other unhandled exceptions (500)
             default:
-                statusCode = (int)HttpStatusCode.InternalServerError;
-                response = ErrorResponseFactory.Create(
-                    context,
-                    ErrorType.InternalServerError,
-                    title: "Internal Server Error",
-                    status: statusCode,
-                    detail: "An unexpected error occurred."
-                );
+                statusCode = StatusCodes.Status500InternalServerError;
+                errorType = ErrorType.InternalServerError;
+                title = "Internal Server Error";
+                detail = "An unexpected error occurred. Please try again later.";
                 break;
         }
+
+        var response = ErrorResponseFactory.Create(
+            context,
+            errorType,
+            title,
+            statusCode,
+            detail,
+            errors
+        );
 
         context.Response.StatusCode = statusCode;
         context.Response.ContentType = "application/json";
 
-        await context.Response.WriteAsJsonAsync(response);
+        await context.Response.WriteAsJsonAsync(response, cancellationToken);
+
+        return true;
     }
 }
