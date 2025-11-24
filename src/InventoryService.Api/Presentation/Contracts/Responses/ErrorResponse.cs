@@ -4,7 +4,8 @@ public record ErrorResponse(
     string Type,
     string Title,
     int Status,
-    string Detail,
+    string? Detail,
     string Instance,
-    DateTimeOffset Timestamp
+    DateTimeOffset Timestamp,
+    IEnumerable<string>? Errors = null
 );

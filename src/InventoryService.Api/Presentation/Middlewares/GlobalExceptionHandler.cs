@@ -36,7 +36,7 @@ public class GlobalExceptionHandler(RequestDelegate next)
                     ErrorType.ValidationError,
                     title: "Validation Error",
                     status: statusCode,
-                    detail: string.Join("; ", validationEx.Errors.Select(e => e.ErrorMessage))
+                    errors: validationEx.Errors.Select(e => e.ErrorMessage)
                 );
                 break;
 

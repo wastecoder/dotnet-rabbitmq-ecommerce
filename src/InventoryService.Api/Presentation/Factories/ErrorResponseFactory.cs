@@ -10,7 +10,9 @@ public static class ErrorResponseFactory
         ErrorType type,
         string title,
         int status,
-        string detail)
+        string? detail = null,
+        IEnumerable<string>? errors = null
+    )
     {
         return new ErrorResponse(
             Type: $"/errors/{GetEnumDescription(type)}",
@@ -18,7 +20,8 @@ public static class ErrorResponseFactory
             Status: status,
             Detail: detail,
             Instance: context.Request.Path,
-            Timestamp: DateTimeOffset.UtcNow
+            Timestamp: DateTimeOffset.UtcNow,
+            Errors: errors
         );
     }
 
