@@ -22,10 +22,6 @@ public class ProductsController(IProductService service, IMapper mapper) : Contr
     public async Task<ActionResult<ProductResponse>> GetById(Guid id)
     {
         var product = await service.GetByIdAsync(id);
-
-        if (product is null)
-            return NotFound($"Product with ID {id} not found.");
-
         return Ok(ApiResponseFactory.Success(mapper.Map<ProductResponse>(product)));
     }
 
@@ -36,7 +32,7 @@ public class ProductsController(IProductService service, IMapper mapper) : Contr
 
         var response = mapper.Map<ProductResponse>(product);
         return CreatedAtAction(
-            nameof(GetById), 
+            nameof(GetById),
             new { id = response.Id },
             ApiResponseFactory.Created(response));
     }
@@ -45,21 +41,13 @@ public class ProductsController(IProductService service, IMapper mapper) : Contr
     public async Task<ActionResult<ProductResponse>> Update(Guid id, [FromBody] ProductRequest request)
     {
         var updated = await service.UpdateAsync(id, request);
-
-        if (updated is null)
-            return NotFound($"Product with ID {id} not found.");
-
         return Ok(ApiResponseFactory.Updated(mapper.Map<ProductResponse>(updated)));
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var success = await service.SoftDeleteAsync(id);
-
-        if (!success)
-            return NotFound($"Product with ID {id} not found.");
-
+        await service.SoftDeleteAsync(id);
         return NoContent();
     }
 }

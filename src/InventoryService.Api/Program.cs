@@ -6,6 +6,7 @@ using InventoryService.Api.Application.Validation;
 using InventoryService.Api.Domain.Interfaces;
 using InventoryService.Api.Infrastructure.Database;
 using InventoryService.Api.Infrastructure.Repositories;
+using InventoryService.Api.Presentation.Middlewares;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,8 +30,6 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<ProductMappingProfile>(), typeof(ProductMappingProfile).Assembly);
 
 // Register validators
-builder.Services.AddFluentValidationAutoValidation();
-builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<ProductRequestValidator>();
 
 var app = builder.Build();
@@ -48,6 +47,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseMiddleware<GlobalExceptionHandler>();
 
 app.UseHttpsRedirection();
 
