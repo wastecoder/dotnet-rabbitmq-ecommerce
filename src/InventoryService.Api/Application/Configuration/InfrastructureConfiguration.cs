@@ -20,6 +20,9 @@ public static class InfrastructureConfiguration
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IProductService, ProductService>();
 
+        services.AddScoped<IStockRepository, StockRepository>();
+        services.AddScoped<IStockService, StockService>();
+
         return services;
     }
 

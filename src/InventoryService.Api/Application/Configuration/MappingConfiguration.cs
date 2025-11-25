@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using InventoryService.Api.Application.Mapping;
+﻿using InventoryService.Api.Application.Mapping;
 
 namespace InventoryService.Api.Application.Configuration;
 
@@ -10,6 +9,7 @@ public static class MappingConfiguration
         services.AddAutoMapper(cfg =>
         {
             cfg.AddProfile<ProductMappingProfile>();
+            cfg.AddProfile<StockMappingProfile>();
         }, typeof(ProductMappingProfile).Assembly);
 
         return services;
