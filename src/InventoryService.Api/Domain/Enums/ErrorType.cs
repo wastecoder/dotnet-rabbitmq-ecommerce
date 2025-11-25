@@ -7,6 +7,7 @@ public enum ErrorType
     Forbidden,
     NotFound,
     Conflict,
+    BadRequest,
     UpstreamServiceError,
     InternalServerError
 }

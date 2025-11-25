@@ -29,6 +29,14 @@ public class GlobalExceptionHandler : IExceptionHandler
                 errors = validationEx.Errors.Select(e => e.ErrorMessage);
                 break;
 
+            // OutOfStock
+            case OutOfStockException outOfStockEx:
+                statusCode = StatusCodes.Status400BadRequest;
+                errorType = ErrorType.BadRequest;
+                title = "Out of Stock";
+                detail = outOfStockEx.Message;
+                break;
+
             // Unauthorized
             case UnauthorizedAccessException:
                 statusCode = StatusCodes.Status401Unauthorized;
