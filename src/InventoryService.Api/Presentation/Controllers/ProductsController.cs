@@ -3,6 +3,7 @@ using InventoryService.Api.Domain.Interfaces;
 using InventoryService.Api.Presentation.Contracts.Requests;
 using InventoryService.Api.Presentation.Contracts.Responses;
 using InventoryService.Api.Presentation.Factories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InventoryService.Api.Presentation.Controllers;
@@ -11,6 +12,7 @@ namespace InventoryService.Api.Presentation.Controllers;
 [Route("api/products")]
 public class ProductsController(IProductService service, IMapper mapper) : ControllerBase
 {
+    [Authorize(Policy = "USER")]
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ProductResponse>>> GetAll()
     {
@@ -18,6 +20,7 @@ public class ProductsController(IProductService service, IMapper mapper) : Contr
         return Ok(ApiResponseFactory.Success(mapper.Map<IEnumerable<ProductResponse>>(products)));
     }
 
+    [Authorize(Policy = "USER")]
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<ProductResponse>> GetById(Guid id)
     {
@@ -25,6 +28,7 @@ public class ProductsController(IProductService service, IMapper mapper) : Contr
         return Ok(ApiResponseFactory.Success(mapper.Map<ProductResponse>(product)));
     }
 
+    [Authorize(Policy = "ADMIN")]
     [HttpPost]
     public async Task<ActionResult<ProductResponse>> Create([FromBody] ProductRequest request)
     {
@@ -37,6 +41,7 @@ public class ProductsController(IProductService service, IMapper mapper) : Contr
             ApiResponseFactory.Created(response));
     }
 
+    [Authorize(Policy = "ADMIN")]
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<ProductResponse>> Update(Guid id, [FromBody] ProductRequest request)
     {
@@ -44,6 +49,7 @@ public class ProductsController(IProductService service, IMapper mapper) : Contr
         return Ok(ApiResponseFactory.Updated(mapper.Map<ProductResponse>(updated)));
     }
 
+    [Authorize(Policy = "ADMIN")]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {

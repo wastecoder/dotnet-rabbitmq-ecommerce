@@ -5,6 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Services
 builder.Services.AddApiConfiguration();
 builder.Services.AddSwaggerDocumentation();
+builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddInventoryInfrastructure(builder.Configuration);
 builder.Services.AddMappingConfiguration();
 
