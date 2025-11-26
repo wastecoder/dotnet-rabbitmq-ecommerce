@@ -4,11 +4,32 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <MigrationsPath>Infrastructure/Migrations</MigrationsPath>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.11">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Application\Configuration\" />
+    <Folder Include="Application\Mapping\" />
+    <Folder Include="Application\Services\" />
+    <Folder Include="Application\Validation\" />
+    <Folder Include="Domain\Exceptions\" />
+    <Folder Include="Domain\Interfaces\" />
+    <Folder Include="Infrastructure\Repositories\" />
+    <Folder Include="Presentation\Contracts\Requests\" />
+    <Folder Include="Presentation\Contracts\Responses\" />
+    <Folder Include="Presentation\Controllers\" />
+    <Folder Include="Presentation\Factories\" />
+    <Folder Include="Presentation\Middlewares\" />
   </ItemGroup>
 
 </Project>

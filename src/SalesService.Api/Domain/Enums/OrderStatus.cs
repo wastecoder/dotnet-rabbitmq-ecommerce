@@ -1,0 +1,11 @@
+﻿namespace SalesService.Api.Domain.Enums;
+
+public enum OrderStatus
+{
+    Pending = 0,
+    Confirmed = 1,
+    Delivered = 2,
+    Cancelled = 3,
+    Returned = 4,
+    Failed = 5
+}
