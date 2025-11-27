@@ -35,6 +35,12 @@ public class Order
     }
 
 
+    public void UpdateNotes(string notes)
+    {
+        Notes = notes;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     private void RecalculateTotal()
     {
         TotalAmount = Items.Sum(i => i.TotalPrice);
@@ -44,6 +50,16 @@ public class Order
     {
         item.SetOrder(this);
         Items.Add(item);
+        RecalculateTotal();
+    }
+
+    public void AddItems(IEnumerable<OrderItem> items)
+    {
+        foreach (var item in items)
+        {
+            item.SetOrder(this);
+            Items.Add(item);
+        }
         RecalculateTotal();
     }
 

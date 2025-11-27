@@ -1,10 +1,14 @@
-﻿namespace SalesService.Api.Domain.Entities;
+﻿using System.Text.Json.Serialization;
+
+namespace SalesService.Api.Domain.Entities;
 
 public class OrderItem
 {
     public Guid Id { get; private set; }
 
     public Guid OrderId { get; private set; }
+
+    [JsonIgnore]
     public Order Order { get; private set; }
 
     public Guid ProductId { get; private set; }
@@ -21,6 +25,14 @@ public class OrderItem
     {
         Id = Guid.NewGuid();
         ProductId = productId;
+        ProductName = productName;
+        UnitPrice = unitPrice;
+        Quantity = quantity;
+    }
+
+
+    public void UpdateDetails(string productName, decimal unitPrice, int quantity)
+    {
         ProductName = productName;
         UnitPrice = unitPrice;
         Quantity = quantity;

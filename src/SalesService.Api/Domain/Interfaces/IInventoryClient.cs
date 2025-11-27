@@ -8,4 +8,5 @@ public interface IInventoryClient
     Task<bool> CheckStockAsync(OrderItemStockCheckDto item);
     Task<StockUpdatedResponse> IncreaseStockAsync(OrderItemStockUpdateDto item);
     Task<StockUpdatedResponse> DecreaseStockAsync(OrderItemStockUpdateDto item);
+    Task<ProductResponse> GetProductByIdAsync(Guid id);
 }

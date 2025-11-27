@@ -69,4 +69,22 @@ public class InventoryClient(HttpClient httpClient) : IInventoryClient
 
         return apiResponse.Data;
     }
+
+    public async Task<ProductResponse> GetProductByIdAsync(Guid id)
+    {
+        var url = $"api/products/{id}";
+
+        var response = await httpClient.GetAsync(url);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            throw new NotFoundException($"Product {id} not found in Inventory.");
+
+        if (!response.IsSuccessStatusCode)
+            throw new ExternalServiceException("Failed to contact InventoryService.");
+
+        var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<ProductResponse>>()
+                          ?? throw new ExternalServiceException("Invalid response from InventoryService.");
+
+        return apiResponse.Data;
+    }
 }
