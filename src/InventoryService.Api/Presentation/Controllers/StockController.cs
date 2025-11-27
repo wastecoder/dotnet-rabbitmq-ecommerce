@@ -12,7 +12,7 @@ namespace InventoryService.Api.Presentation.Controllers;
 [Route("api/stock/{id:guid}")]
 public class StockController(IStockService service, IMapper mapper) : ControllerBase
 {
-    [Authorize(Policy = "USER")]
+    // [Authorize(Policy = "USER")]
     [HttpGet]
     public async Task<ActionResult<StockAvailabilityResponse>> GetAvailability(Guid id)
     {
@@ -20,7 +20,7 @@ public class StockController(IStockService service, IMapper mapper) : Controller
         return Ok(ApiResponseFactory.Success(mapper.Map<StockAvailabilityResponse>(product)));
     }
     
-    [Authorize(Policy = "ADMIN")]
+    // [Authorize(Policy = "ADMIN")]
     [HttpPost("decrease")]
     public async Task<ActionResult<StockUpdatedResponse>> Decrease(
         Guid id,
@@ -31,7 +31,7 @@ public class StockController(IStockService service, IMapper mapper) : Controller
         return Ok(ApiResponseFactory.Updated(mapper.Map<StockUpdatedResponse>(result)));
     }
 
-    [Authorize(Policy = "ADMIN")]
+    // [Authorize(Policy = "ADMIN")]
     [HttpPost("increase")]
     public async Task<ActionResult<StockUpdatedResponse>> Increase(
         Guid id,
