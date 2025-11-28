@@ -1,4 +1,5 @@
 ﻿using SalesService.Api.Application.Helpers;
+using SalesService.Api.Application.Validation;
 using SalesService.Api.Domain.Entities;
 using SalesService.Api.Domain.Exceptions;
 using SalesService.Api.Domain.Interfaces;
@@ -10,6 +11,9 @@ public class OrderService(IOrderRepository repository, IOrderOrchestrator orderO
 {
     public async Task<Order> CreateOrderAsync(CreateOrderRequest request)
     {
+        // 0. Validate request manually
+        await new CreateOrderRequestValidator().ValidateOrThrowAsync(request);
+        
         // 1. validate stock
         await orderOrchestrator.ValidateStockAsync(request.Items);
 
@@ -57,12 +61,15 @@ public class OrderService(IOrderRepository repository, IOrderOrchestrator orderO
 
     public async Task<Order> UpdateOrderAsync(Guid id, CreateOrderRequest request)
     {
+        // Validate updated request
+        await new CreateOrderRequestValidator().ValidateOrThrowAsync(request);
+        
         var order = await repository.GetByIdAsync(id);
         if (order is null)
             throw new NotFoundException($"Order with ID {id} was not found.");
 
         // 1. Update order notes
-        order.UpdateNotes(request.Notes ?? string.Empty);
+        order.UpdateNotes(request.Notes);
 
         // 2. Fetch only needed products (new items or changed quantities)
         var productIds = request.Items.Select(i => i.ProductId).Distinct();
