@@ -1,68 +1,38 @@
-﻿using SalesService.Api.Domain.Entities;
+﻿using SalesService.Api.Application.Helpers;
+using SalesService.Api.Domain.Entities;
 using SalesService.Api.Domain.Exceptions;
 using SalesService.Api.Domain.Interfaces;
-using SalesService.Api.Domain.Messages;
 using SalesService.Api.Presentation.Contracts.Requests;
 
 namespace SalesService.Api.Application.Services;
 
-public class OrderService(IOrderRepository repository, IInventoryClient inventoryClient) : IOrderService
+public class OrderService(IOrderRepository repository, IOrderOrchestrator orderOrchestrator) : IOrderService
 {
     public async Task<Order> CreateOrderAsync(CreateOrderRequest request)
     {
-        var order = new Order(request.Notes ?? string.Empty);
+        // 1. validate stock
+        await orderOrchestrator.ValidateStockAsync(request.Items);
 
-        // 1. Validate stock for each item
-        foreach (var item in request.Items)
-        {
-            var hasStock = await inventoryClient.CheckStockAsync(
-                new OrderItemStockCheckDto(item.ProductId, item.Quantity));
+        // 2. fetch products once
+        var productIds = request.Items.Select(i => i.ProductId);
+        var products = await orderOrchestrator.FetchProductsAsync(productIds);
 
-            if (!hasStock)
-                throw new BusinessValidationException($"Insufficient stock for product {item.ProductId}.");
-        }
+        // 3. build items
+        var orderItems = await orderOrchestrator.BuildOrderItemsAsync(request.Items, products);
 
-        // 2. Build order entity
-        foreach (var item in request.Items)
-        {
-            var product = await inventoryClient.GetProductByIdAsync(item.ProductId);
-            var orderItem = new OrderItem(
-                product.Id,
-                product.Name,
-                product.Price,
-                item.Quantity
-            );
+        var order = new Order(request.Notes);
+        order.AddItems(orderItems);
 
-            order.AddItem(orderItem);
-        }
+        // 4. apply stock decrease with rollback only AFTER DB is saved
+        var adjustments = orderItems
+            .Select(i => (i.ProductId, i.Quantity))
+            .ToList();
 
-        // 3. Persist order
+        // 5. atomic-like operation:
         await repository.AddAsync(order);
         await repository.SaveChangesAsync();
 
-        // 4. Decrease stock for each item
-        var successfulDecreases = new List<OrderItem>();
-
-        try
-        {
-            foreach (var item in order.Items)
-            {
-                await inventoryClient
-                    .DecreaseStockAsync(new OrderItemStockUpdateDto(item.ProductId, item.Quantity));
-
-                successfulDecreases.Add(item);
-            }
-        }
-        catch (Exception)
-        {
-            // 5. Compensation / rollback stock
-            foreach (var item in successfulDecreases)
-            {
-                await inventoryClient.IncreaseStockAsync(
-                    new OrderItemStockUpdateDto(item.ProductId, item.Quantity));
-            }
-            throw;
-        }
+        await orderOrchestrator.ExecuteStockAdjustmentsWithRollbackAsync(adjustments);
 
         // 6. Publish event (will implement later)
         // await _rabbitMqProducer.PublishOrderCreatedAsync(new OrderCreatedMessage(order));
@@ -91,107 +61,43 @@ public class OrderService(IOrderRepository repository, IInventoryClient inventor
         if (order is null)
             throw new NotFoundException($"Order with ID {id} was not found.");
 
-        // Update notes
+        // 1. Update order notes
         order.UpdateNotes(request.Notes ?? string.Empty);
 
-        // Build a map of existing items for quick lookup
-        var existingItemsMap = order.Items.ToDictionary(i => i.ProductId);
+        // 2. Fetch only needed products (new items or changed quantities)
+        var productIds = request.Items.Select(i => i.ProductId).Distinct();
+        var products = await orderOrchestrator.FetchProductsAsync(productIds);
 
-        var newItems = new List<OrderItem>();
-        var stockAdjustments = new List<(OrderItem item, int diff)>(); // diff > 0 -> decrease, diff < 0 -> increase
+        // 3. Calculate diffs
+        var result = OrderUpdateCalculator.Calculate(order.Items, request.Items, products);
 
-        foreach (var itemRequest in request.Items)
-        {
-            var product = await inventoryClient.GetProductByIdAsync(itemRequest.ProductId);
-            if (!existingItemsMap.TryGetValue(itemRequest.ProductId, out var existingItem))
-            {
-                // New item added to order
-                var newItem = new OrderItem(
-                    product.Id,
-                    product.Name,
-                    product.Price,
-                    itemRequest.Quantity
-                );
-
-                // Check stock only if quantity > 0
-                if (itemRequest.Quantity > 0)
-                {
-                    var hasStock = await inventoryClient.CheckStockAsync(
-                        new OrderItemStockCheckDto(product.Id, itemRequest.Quantity));
-                    if (!hasStock)
-                        throw new BusinessValidationException($"Insufficient stock for product {product.Id}.");
-                }
-
-                newItems.Add(newItem);
-                stockAdjustments.Add((newItem, itemRequest.Quantity)); // need to decrease stock later
-            }
-            else
-            {
-                // Existing item, compute quantity difference
-                var diff = itemRequest.Quantity - existingItem.Quantity;
-
-                if (diff > 0)
-                {
-                    // Validate additional stock only if increasing quantity
-                    var hasStock = await inventoryClient.CheckStockAsync(
-                        new OrderItemStockCheckDto(product.Id, diff));
-                    if (!hasStock)
-                        throw new BusinessValidationException($"Insufficient stock for product {product.Id}.");
-                }
-
-                // Apply updates in-place
-                existingItem.UpdateDetails(product.Name, product.Price, itemRequest.Quantity);
-
-                newItems.Add(existingItem);
-
-                if (diff != 0)
-                    stockAdjustments.Add((existingItem, diff));
-            }
-        }
-
-        // Remove items no longer in the request
-        var itemsToRemove = order.Items
-            .Where(i => request.Items.All(r => r.ProductId != i.ProductId))
+        // 4. Validate stock for new or increased items
+        var itemsToValidate = result.NewItems
+            .Concat(result.UpdatedItems
+                .Where(u => result.StockAdjustments.Any(a => a.productId == u.ProductId && a.diff > 0)))
+            .Select(i => new OrderItemRequest(i.ProductId, i.Quantity))
             .ToList();
-        foreach (var removed in itemsToRemove)
-        {
+
+        if (itemsToValidate.Count > 0)
+            await orderOrchestrator.ValidateStockAsync(itemsToValidate);
+
+        // 5. Apply changes in Order entity
+        foreach (var removed in result.RemovedItems)
             order.RemoveItem(removed.Id);
-            stockAdjustments.Add((removed, -removed.Quantity)); // return stock to inventory
-        }
 
-        // Update order items collection
-        order.AddItems(newItems);
+        foreach (var updated in result.UpdatedItems)
+            order.UpdateItem(updated);
 
-        // Persist order and adjust stock
+        foreach (var added in result.NewItems)
+            order.AddItem(added);
+
+        // 6. Persist order
         await repository.UpdateAsync(order);
         await repository.SaveChangesAsync();
 
-        // Apply stock adjustments with compensation in case of failure
-        var successfulAdjustments = new List<(OrderItem, int)>();
-        try
-        {
-            foreach (var (item, diff) in stockAdjustments)
-            {
-                if (diff > 0)
-                    await inventoryClient.DecreaseStockAsync(new OrderItemStockUpdateDto(item.ProductId, diff));
-                else if (diff < 0)
-                    await inventoryClient.IncreaseStockAsync(new OrderItemStockUpdateDto(item.ProductId, -diff));
-
-                successfulAdjustments.Add((item, diff));
-            }
-        }
-        catch (Exception)
-        {
-            // Rollback stock changes if any adjustment fails
-            foreach (var (item, diff) in successfulAdjustments)
-            {
-                if (diff > 0)
-                    await inventoryClient.IncreaseStockAsync(new OrderItemStockUpdateDto(item.ProductId, diff));
-                else if (diff < 0)
-                    await inventoryClient.DecreaseStockAsync(new OrderItemStockUpdateDto(item.ProductId, -diff));
-            }
-            throw;
-        }
+        // 7. Apply stock adjustments with rollback
+        if (result.StockAdjustments.Count > 0)
+            await orderOrchestrator.ExecuteStockAdjustmentsWithRollbackAsync(result.StockAdjustments);
 
         return order;
     }

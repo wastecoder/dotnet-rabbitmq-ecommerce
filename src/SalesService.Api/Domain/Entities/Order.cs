@@ -72,6 +72,16 @@ public class Order
         RecalculateTotal();
     }
 
+    public void UpdateItem(OrderItem item)
+    {
+        var existing = Items.FirstOrDefault(i => i.Id == item.Id);
+        if (existing == null)
+            throw new InvalidOperationException($"Item with Id {item.Id} not found in order.");
+
+        existing.UpdateDetails(item.ProductName, item.UnitPrice, item.Quantity);
+        RecalculateTotal();
+    }
+
     public void SetStatusToConfirmed()
     {
         if (Status != OrderStatus.Pending)

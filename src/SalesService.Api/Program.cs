@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SalesService.Api.Application.Orchestrators;
 using SalesService.Api.Application.Services;
 using SalesService.Api.Domain.Exceptions;
 using SalesService.Api.Domain.Interfaces;
@@ -19,6 +20,9 @@ builder.Services.AddDbContext<SalesDbContext>(options =>
 
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+
+builder.Services.AddScoped<IStockOrchestrator, StockOrchestrator>();
+builder.Services.AddScoped<IOrderOrchestrator, OrderOrchestrator>();
 
 builder.Services.AddHttpClient<IInventoryClient, InventoryClient>(client =>
 {
