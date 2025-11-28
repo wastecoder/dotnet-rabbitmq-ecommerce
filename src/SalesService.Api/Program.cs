@@ -1,16 +1,19 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
+using SalesService.Api.Application.Mapping;
 using SalesService.Api.Application.Orchestrators;
 using SalesService.Api.Application.Services;
-using SalesService.Api.Domain.Exceptions;
+using SalesService.Api.Application.Validation;
 using SalesService.Api.Domain.Interfaces;
 using SalesService.Api.Infrastructure.Database;
 using SalesService.Api.Infrastructure.Http;
 using SalesService.Api.Infrastructure.Repositories;
-using SalesService.Api.Presentation.Contracts.Requests;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
+// Add essential services
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -18,15 +21,29 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<SalesDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("SalesDb")));
 
+// Register repositories
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
+// Register application services
 builder.Services.AddScoped<IOrderService, OrderService>();
-
-builder.Services.AddScoped<IStockOrchestrator, StockOrchestrator>();
 builder.Services.AddScoped<IOrderOrchestrator, OrderOrchestrator>();
+builder.Services.AddScoped<IStockOrchestrator, StockOrchestrator>();
 
+// Register AutoMapper
+builder.Services.AddAutoMapper(
+    cfg => cfg.AddProfile<OrderMappingProfile>(),
+    typeof(OrderMappingProfile).Assembly
+);
+
+// Register validators
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateOrderRequestValidator>();
+
+// Register Http Clients
 builder.Services.AddHttpClient<IInventoryClient, InventoryClient>(client =>
 {
-    client.BaseAddress = new Uri("http://localhost:5001/");
+    client.BaseAddress = new Uri(builder.Configuration["Services:Inventory"] ?? "http://localhost:5001/");
 });
 
 var app = builder.Build();
@@ -38,7 +55,7 @@ using (var scope = app.Services.CreateScope())
     await SalesDbSeeder.SeedAsync(db);
 }
 
-// Configure the HTTP request pipeline
+// Configure HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -47,78 +64,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Test endpoint
-app.MapGet("/", () => "Sales API is running...");
-
-app.MapPost("/test/orders/create", async (
-    CreateOrderRequest request,
-    IOrderService orderService) =>
-{
-    try
-    {
-        var order = await orderService.CreateOrderAsync(request);
-        return Results.Ok(order);
-    }
-    catch (BusinessValidationException ex)
-    {
-        return Results.BadRequest(new { error = ex.Message });
-    }
-});
-
-app.MapPut("/test/orders/update/{id:guid}", async (
-    Guid id,
-    CreateOrderRequest request,
-    IOrderService orderService) =>
-{
-    try
-    {
-        var order = await orderService.UpdateOrderAsync(id, request);
-        return Results.Ok(order);
-    }
-    catch (NotFoundException ex)
-    {
-        return Results.NotFound(new { error = ex.Message });
-    }
-    catch (BusinessValidationException ex)
-    {
-        return Results.BadRequest(new { error = ex.Message });
-    }
-});
-
-app.MapGet("/test/orders/{id:guid}", async (
-    Guid id,
-    IOrderService orderService) =>
-{
-    try
-    {
-        var order = await orderService.GetOrderByIdAsync(id);
-        return Results.Ok(order);
-    }
-    catch (NotFoundException ex)
-    {
-        return Results.NotFound(new { error = ex.Message });
-    }
-});
-
-app.MapGet("/test/orders", async (IOrderService orderService) =>
-{
-    var orders = await orderService.GetAllOrdersAsync();
-    return Results.Ok(orders);
-});
-
-app.MapDelete("/test/orders/{id:guid}", async (
-    Guid id,
-    IOrderService orderService) =>
-{
-    try
-    {
-        await orderService.SoftDeleteOrderAsync(id);
-        return Results.Ok(new { message = "Order deleted." });
-    }
-    catch (NotFoundException ex)
-    {
-        return Results.NotFound(new { error = ex.Message });
-    }
-});
+// Map controllers
+app.MapControllers();
 
 app.Run();
