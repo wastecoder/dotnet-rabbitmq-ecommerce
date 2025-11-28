@@ -12,22 +12,18 @@ public class InventoryClient(HttpClient httpClient) : IInventoryClient
 {
     private const string BasePath = "api/stock";
 
+
     public async Task<bool> CheckStockAsync(OrderItemStockCheckDto item)
     {
         var url = $"{BasePath}/{item.ProductId}";
-
         var response = await httpClient.GetAsync(url);
 
-        if (response.StatusCode == HttpStatusCode.NotFound)
-            throw new NotFoundException($"Product {item.ProductId} not found in Inventory.");
+        var data = await ReadResultOrThrow<StockAvailabilityResponse>(response);
 
-        if (!response.IsSuccessStatusCode)
-            throw new ExternalServiceException("Failed to contact InventoryService.");
+        if (data.AvailableQuantity < 0)
+            throw new ExternalServiceException("Inventory returned an invalid stock quantity.");
 
-        var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<StockAvailabilityResponse>>()
-                          ?? throw new ExternalServiceException("Invalid response from InventoryService.");
-
-        return apiResponse.Data.AvailableQuantity >= item.Quantity;
+        return data.AvailableQuantity >= item.Quantity;
     }
 
     public async Task<StockUpdatedResponse> DecreaseStockAsync(OrderItemStockUpdateDto item)
@@ -38,16 +34,7 @@ public class InventoryClient(HttpClient httpClient) : IInventoryClient
 
         var response = await httpClient.PostAsJsonAsync(url, requestBody);
 
-        if (response.StatusCode == HttpStatusCode.NotFound)
-            throw new NotFoundException($"Product {item.ProductId} not found in Inventory.");
-
-        if (!response.IsSuccessStatusCode)
-            throw new ExternalServiceException("Failed to decrease stock in InventoryService.");
-
-        var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<StockUpdatedResponse>>()
-                          ?? throw new ExternalServiceException("Invalid response from InventoryService.");
-
-        return apiResponse.Data;
+        return await ReadResultOrThrow<StockUpdatedResponse>(response);
     }
 
     public async Task<StockUpdatedResponse> IncreaseStockAsync(OrderItemStockUpdateDto item)
@@ -58,16 +45,7 @@ public class InventoryClient(HttpClient httpClient) : IInventoryClient
 
         var response = await httpClient.PostAsJsonAsync(url, requestBody);
 
-        if (response.StatusCode == HttpStatusCode.NotFound)
-            throw new NotFoundException($"Product {item.ProductId} not found in Inventory.");
-
-        if (!response.IsSuccessStatusCode)
-            throw new ExternalServiceException("Failed to increase stock in InventoryService.");
-
-        var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<StockUpdatedResponse>>()
-                          ?? throw new ExternalServiceException("Invalid response from InventoryService.");
-
-        return apiResponse.Data;
+        return await ReadResultOrThrow<StockUpdatedResponse>(response);
     }
 
     public async Task<ProductResponse> GetProductByIdAsync(Guid id)
@@ -76,14 +54,25 @@ public class InventoryClient(HttpClient httpClient) : IInventoryClient
 
         var response = await httpClient.GetAsync(url);
 
+        return await ReadResultOrThrow<ProductResponse>(response);
+    }
+
+
+    private static async Task<T> ReadResultOrThrow<T>(HttpResponseMessage response)
+    {
         if (response.StatusCode == HttpStatusCode.NotFound)
-            throw new NotFoundException($"Product {id} not found in Inventory.");
+            throw new NotFoundException("Resource not found in Inventory.");
 
         if (!response.IsSuccessStatusCode)
             throw new ExternalServiceException("Failed to contact InventoryService.");
 
-        var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<ProductResponse>>()
-                          ?? throw new ExternalServiceException("Invalid response from InventoryService.");
+        var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<T>>();
+        if (apiResponse is null)
+            throw new ExternalServiceException("Invalid response from InventoryService.");
+
+
+        if (apiResponse.Data is null)
+            throw new ExternalServiceException("InventoryService returned an empty result.");
 
         return apiResponse.Data;
     }
