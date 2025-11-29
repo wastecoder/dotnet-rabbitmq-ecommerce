@@ -1,5 +1,6 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SalesService.Api.Application.Mapping;
 using SalesService.Api.Application.Orchestrators;
@@ -9,6 +10,7 @@ using SalesService.Api.Domain.Interfaces;
 using SalesService.Api.Infrastructure.Database;
 using SalesService.Api.Infrastructure.Http;
 using SalesService.Api.Infrastructure.Repositories;
+using SalesService.Api.Presentation.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,6 +42,15 @@ builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateOrderRequestValidator>();
 
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = true;
+});
+
+// Register exception handling
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 // Register Http Clients
 builder.Services.AddHttpClient<IInventoryClient, InventoryClient>(client =>
 {
@@ -61,6 +72,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseExceptionHandler();
 
 app.UseHttpsRedirection();
 

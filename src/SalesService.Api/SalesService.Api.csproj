@@ -22,7 +22,6 @@
 
   <ItemGroup>
     <Folder Include="Application\Configuration\" />
-    <Folder Include="Presentation\Middlewares\" />
   </ItemGroup>
 
 </Project>
