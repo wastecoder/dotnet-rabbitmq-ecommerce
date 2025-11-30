@@ -2,6 +2,7 @@
 using SalesService.Api.Application.Orchestrators;
 using SalesService.Api.Application.Services;
 using SalesService.Api.Domain.Interfaces;
+using SalesService.Api.Infrastructure.Configurations;
 using SalesService.Api.Infrastructure.Database;
 using SalesService.Api.Infrastructure.Repositories;
 
@@ -13,6 +14,9 @@ public static class InfrastructureConfiguration
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        // Register RabbitMQ settings
+        services.Configure<RabbitMqSettings>(configuration.GetSection("RabbitMq"));
+
         services.AddDbContext<SalesDbContext>(options =>
         {
             options.UseNpgsql(configuration.GetConnectionString("SalesDb"));
