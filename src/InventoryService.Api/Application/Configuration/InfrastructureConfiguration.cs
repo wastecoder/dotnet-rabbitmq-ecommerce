@@ -2,6 +2,7 @@
 using InventoryService.Api.Domain.Interfaces;
 using InventoryService.Api.Infrastructure.Configurations;
 using InventoryService.Api.Infrastructure.Database;
+using InventoryService.Api.Infrastructure.Messaging;
 using InventoryService.Api.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,8 +14,8 @@ public static class InfrastructureConfiguration
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Register RabbitMQ settings
         services.Configure<RabbitMqSettings>(configuration.GetSection("RabbitMq"));
+        services.AddSingleton<IRabbitMqProducer, RabbitMqPublisher>();
 
         services.AddDbContext<InventoryDbContext>(options =>
         {

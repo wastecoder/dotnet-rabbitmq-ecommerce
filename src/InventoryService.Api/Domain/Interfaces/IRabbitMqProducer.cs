@@ -1,4 +1,4 @@
-﻿namespace SalesService.Api.Domain.Interfaces;
+﻿namespace InventoryService.Api.Domain.Interfaces;
 
 public interface IRabbitMqProducer
 {

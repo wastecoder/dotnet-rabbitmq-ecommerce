@@ -4,6 +4,7 @@ using SalesService.Api.Application.Services;
 using SalesService.Api.Domain.Interfaces;
 using SalesService.Api.Infrastructure.Configurations;
 using SalesService.Api.Infrastructure.Database;
+using SalesService.Api.Infrastructure.Messaging;
 using SalesService.Api.Infrastructure.Repositories;
 
 namespace SalesService.Api.Application.Configuration;
@@ -14,8 +15,8 @@ public static class InfrastructureConfiguration
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Register RabbitMQ settings
         services.Configure<RabbitMqSettings>(configuration.GetSection("RabbitMq"));
+        services.AddSingleton<IRabbitMqProducer, RabbitMqPublisher>();
 
         services.AddDbContext<SalesDbContext>(options =>
         {
