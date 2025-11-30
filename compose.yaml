@@ -38,6 +38,17 @@
     volumes:
       - sales-postgres-data:/var/lib/postgresql
 
+  ecommerce-rabbitmq:
+    image: rabbitmq:3-management
+    container_name: ecommerce-rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
 volumes:
   gateway-postgres-data:
   inventory-postgres-data:
