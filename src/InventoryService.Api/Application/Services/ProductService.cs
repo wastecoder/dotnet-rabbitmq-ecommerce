@@ -46,6 +46,12 @@ public class ProductService(IProductRepository repository) : IProductService
 
     public async Task<Product> UpdateAsync(Guid id, ProductRequest request)
     {
+        var validator = new ProductRequestValidator();
+        var result = await validator.ValidateAsync(request);
+
+        if (!result.IsValid)
+            throw new FluentValidation.ValidationException(result.Errors);
+
         var product = await repository.GetByIdAsync(id);
 
         if (product is null)
