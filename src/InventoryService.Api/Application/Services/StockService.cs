@@ -6,7 +6,7 @@ using InventoryService.Api.Presentation.Contracts.Requests;
 
 namespace InventoryService.Api.Application.Services;
 
-public class StockService(IStockRepository repository) : IStockService
+public class StockService(IStockRepository repository, StockEventPublisher eventPublisher) : IStockService
 {
     public async Task<Product> GetAvailabilityAsync(Guid id)
     {
@@ -38,6 +38,8 @@ public class StockService(IStockRepository repository) : IStockService
         await repository.UpdateAsync(product);
         await repository.SaveChangesAsync();
 
+        await eventPublisher.PublishStockUpdatedAsync(product);
+
         return (product, oldQuantity);
     }
 
@@ -58,6 +60,8 @@ public class StockService(IStockRepository repository) : IStockService
 
         await repository.UpdateAsync(product);
         await repository.SaveChangesAsync();
+
+        await eventPublisher.PublishStockUpdatedAsync(product);
 
         return (product, oldQuantity);
     }

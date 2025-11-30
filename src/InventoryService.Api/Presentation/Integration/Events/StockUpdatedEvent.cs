@@ -4,5 +4,5 @@ public record StockUpdatedEvent(
     Guid ProductId,
     string ProductName,
     int Quantity,
-    DateTime Timestamp
+    DateTimeOffset Timestamp
 );

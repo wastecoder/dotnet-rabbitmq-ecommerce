@@ -16,6 +16,7 @@ public static class InfrastructureConfiguration
     {
         services.Configure<RabbitMqSettings>(configuration.GetSection("RabbitMq"));
         services.AddSingleton<IRabbitMqProducer, RabbitMqPublisher>();
+        services.AddScoped<StockEventPublisher>();
 
         services.AddDbContext<InventoryDbContext>(options =>
         {

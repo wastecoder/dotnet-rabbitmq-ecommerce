@@ -5,5 +5,5 @@ public record StockLowEvent(
     string ProductName,
     int Quantity,
     int Threshold,
-    DateTime Timestamp
+    DateTimeOffset Timestamp
 );
