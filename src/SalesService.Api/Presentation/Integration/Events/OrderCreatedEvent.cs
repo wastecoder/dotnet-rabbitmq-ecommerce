@@ -3,6 +3,6 @@
 public record OrderCreatedEvent(
     Guid OrderId,
     decimal TotalAmount,
-    DateTime CreatedAt,
+    DateTimeOffset CreatedAt,
     IReadOnlyList<OrderCreatedItem> Items
 );

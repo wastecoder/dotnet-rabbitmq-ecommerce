@@ -7,13 +7,16 @@ using SalesService.Api.Presentation.Contracts.Requests;
 
 namespace SalesService.Api.Application.Services;
 
-public class OrderService(IOrderRepository repository, IOrderOrchestrator orderOrchestrator) : IOrderService
+public class OrderService(
+    IOrderRepository repository,
+    IOrderOrchestrator orderOrchestrator,
+    OrderEventPublisher eventPublisher) : IOrderService
 {
     public async Task<Order> CreateOrderAsync(CreateOrderRequest request)
     {
         // 0. Validate request manually
         await new CreateOrderRequestValidator().ValidateOrThrowAsync(request);
-        
+
         // 1. validate stock
         await orderOrchestrator.ValidateStockAsync(request.Items);
 
@@ -36,10 +39,11 @@ public class OrderService(IOrderRepository repository, IOrderOrchestrator orderO
         await repository.AddAsync(order);
         await repository.SaveChangesAsync();
 
+        // 6. apply stock decrease
         await orderOrchestrator.ExecuteStockAdjustmentsWithRollbackAsync(adjustments);
 
-        // 6. Publish event (will implement later)
-        // await _rabbitMqProducer.PublishOrderCreatedAsync(new OrderCreatedMessage(order));
+        // 7. publish event
+        await eventPublisher.PublishOrderCreatedAsync(order);
 
         return order;
     }
