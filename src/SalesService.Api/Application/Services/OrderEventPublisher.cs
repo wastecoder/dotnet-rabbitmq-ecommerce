@@ -13,7 +13,7 @@ public class OrderEventPublisher(IRabbitMqProducer producer)
             order.TotalAmount,
             order.CreatedAt,
             order.Items.Select(i =>
-                new OrderCreatedItem(i.ProductId, i.Quantity)
+                new OrderCreatedItem(i.ProductId, i.ProductName, i.Quantity, i.UnitPrice)
             ).ToList()
         );
 

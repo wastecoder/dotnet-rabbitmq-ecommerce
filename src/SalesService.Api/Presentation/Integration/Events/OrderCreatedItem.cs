@@ -2,5 +2,7 @@
 
 public record OrderCreatedItem(
     Guid ProductId,
-    int Quantity
+    string ProductName,
+    int Quantity,
+    decimal UnitPrice
 );
