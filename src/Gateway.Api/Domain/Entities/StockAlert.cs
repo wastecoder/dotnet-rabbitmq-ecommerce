@@ -19,4 +19,11 @@ public class StockAlert
         Message = message;
         Timestamp = DateTimeOffset.UtcNow;
     }
+
+    public void Update(string type, Guid productId, string message)
+    {
+        Type = type;
+        ProductId = productId;
+        Message = message;
+    }
 }

@@ -14,6 +14,7 @@ public class StockEventPublisher(IRabbitMqProducer producer)
             product.Id,
             product.Name,
             product.Quantity,
+            Threshold,
             DateTimeOffset.UtcNow
         );
 

@@ -1,4 +1,4 @@
-﻿namespace InventoryService.Api.Presentation.Integration.Events;
+﻿namespace Gateway.Api.Presentation.Integration.Events.Inventory;
 
 public record StockUpdatedEvent(
     Guid ProductId,
