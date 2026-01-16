@@ -18,6 +18,13 @@ public class ProductMetricsRepository(AppDbContext db) : IProductMetricsReposito
             .FirstOrDefaultAsync(x => x.ProductId == productId);
     }
 
+    public async Task<IReadOnlyList<ProductMetrics>> GetAllAsync()
+    {
+        return await db.ProductMetrics
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
     public Task UpdateAsync(ProductMetrics metrics)
     {
         db.ProductMetrics.Update(metrics);
