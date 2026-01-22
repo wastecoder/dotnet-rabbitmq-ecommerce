@@ -1,5 +1,6 @@
 ﻿using Gateway.Api.Application.Services;
 using Gateway.Api.Domain.Interfaces;
+using Gateway.Api.Infrastructure.Configurations;
 using Gateway.Api.Infrastructure.Database;
 using Gateway.Api.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,8 @@ public static class InfrastructureConfiguration
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.Configure<RabbitMqSettings>(configuration.GetSection("RabbitMq"));
+
         services.AddDbContext<AppDbContext>(options =>
         {
             options.UseNpgsql(configuration.GetConnectionString("GatewayDb"));
