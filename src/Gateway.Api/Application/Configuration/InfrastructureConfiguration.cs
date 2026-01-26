@@ -26,9 +26,17 @@ public static class InfrastructureConfiguration
         });
 
         services.AddScoped<IUserRepository, UserRepository>();
-
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IAuthService, AuthService>();
+
+        services.AddScoped<IProductMetricsService, ProductMetricsService>();
+        services.AddScoped<IProductSalesStatsService, ProductSalesStatsService>();
+        services.AddScoped<ISalesCountersService, SalesCountersService>();
+
+        services.AddScoped<IProductMetricsRepository, ProductMetricsRepository>();
+        services.AddScoped<IProductSalesStatsRepository, ProductSalesStatsRepository>();
+        services.AddScoped<ISalesMetricsRepository, SalesMetricsRepository>();
+        services.AddScoped<IStockAlertRepository, StockAlertRepository>();
 
         services.AddSingleton<RabbitMqConnection>();
 
