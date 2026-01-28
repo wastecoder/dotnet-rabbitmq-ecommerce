@@ -2,9 +2,8 @@
 using Gateway.Api.Domain.Interfaces;
 using Gateway.Api.Infrastructure.Configurations;
 using Gateway.Api.Infrastructure.Database;
-using Gateway.Api.Infrastructure.Messaging.Abstractions;
-using Gateway.Api.Infrastructure.Messaging.Configs;
 using Gateway.Api.Infrastructure.Messaging.Consumers;
+using Gateway.Api.Infrastructure.Messaging.Hosting;
 using Gateway.Api.Infrastructure.Messaging.RabbitMq;
 using Gateway.Api.Infrastructure.Repositories;
 using Gateway.Api.Presentation.Integration.Events.Inventory;
@@ -39,10 +38,7 @@ public static class InfrastructureConfiguration
         services.AddScoped<IStockAlertRepository, StockAlertRepository>();
 
         services.AddSingleton<RabbitMqConnection>();
-
-        services.AddScoped<IRabbitMqConsumer<StockUpdatedEvent>, StockUpdatedConsumer>();
-        services.AddHostedService<StockUpdatedHostedService>();
-        services.AddSingleton<IRabbitMqConsumerConfiguration<StockUpdatedEvent>, StockUpdatedConsumerConfiguration>();
+        services.AddGatewayMessaging();
 
         return services;
     }
