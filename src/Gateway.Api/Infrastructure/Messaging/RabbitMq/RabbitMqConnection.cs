@@ -10,9 +10,6 @@ public class RabbitMqConnection : IDisposable
 {
     private readonly RabbitMqSettings _settings;
     private readonly IConnection _connection;
-    private readonly IModel _channel;
-
-    public IModel Channel => _channel;
 
     public RabbitMqConnection(IOptions<RabbitMqSettings> options)
     {
@@ -23,22 +20,32 @@ public class RabbitMqConnection : IDisposable
             HostName = _settings.Host,
             Port = _settings.Port,
             UserName = _settings.Username,
-            Password = _settings.Password
+            Password = _settings.Password,
+            DispatchConsumersAsync = true
         };
 
         _connection = factory.CreateConnection();
-        _channel = _connection.CreateModel();
+    }
 
-        _channel.ExchangeDeclare(
+    public IModel CreateChannel()
+    {
+        var channel = _connection.CreateModel();
+
+        channel.ExchangeDeclare(
             exchange: _settings.ExchangeName,
             type: ExchangeType.Topic,
             durable: _settings.Durable
         );
+
+        return channel;
     }
 
-    public void DeclareQueueAndBind(string queueName, params string[] routingKeys)
+    public void DeclareQueueAndBind(
+        IModel channel,
+        string queueName,
+        params string[] routingKeys)
     {
-        _channel.QueueDeclare(
+        channel.QueueDeclare(
             queue: queueName,
             durable: true,
             exclusive: false,
@@ -47,7 +54,7 @@ public class RabbitMqConnection : IDisposable
 
         foreach (var routingKey in routingKeys)
         {
-            _channel.QueueBind(
+            channel.QueueBind(
                 queue: queueName,
                 exchange: _settings.ExchangeName,
                 routingKey: routingKey
@@ -63,7 +70,6 @@ public class RabbitMqConnection : IDisposable
 
     public void Dispose()
     {
-        _channel.Dispose();
         _connection.Dispose();
         GC.SuppressFinalize(this);
     }

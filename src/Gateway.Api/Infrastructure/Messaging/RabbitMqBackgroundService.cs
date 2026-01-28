@@ -5,59 +5,62 @@ using RabbitMQ.Client.Events;
 
 namespace Gateway.Api.Infrastructure.Messaging;
 
-public class RabbitMqBackgroundService<TEvent>(
-    RabbitMqConnection connection,
-    IServiceScopeFactory scopeFactory,
-    string queueName,
-    string[] routingKeys
-) : BackgroundService
+public class RabbitMqBackgroundService<TEvent> : BackgroundService
 {
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    private readonly RabbitMqConnection _connection;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IRabbitMqConsumerConfiguration<TEvent> _config;
+
+    public RabbitMqBackgroundService(
+        RabbitMqConnection connection,
+        IServiceScopeFactory scopeFactory,
+        IRabbitMqConsumerConfiguration<TEvent> config)
     {
-        connection.DeclareQueueAndBind(queueName, routingKeys);
+        _connection = connection;
+        _scopeFactory = scopeFactory;
+        _config = config;
+        Console.WriteLine(">>> CONSTRUCTOR");
+    }
 
-        var channel = connection.Channel;
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        var channel = _connection.CreateChannel();
 
-        var asyncConsumer = new AsyncEventingBasicConsumer(channel);
+        _connection.DeclareQueueAndBind(
+            channel,
+            _config.QueueName,
+            _config.RoutingKeys);
 
-        asyncConsumer.Received += async (_, args) =>
+        var consumer = new AsyncEventingBasicConsumer(channel);
+
+        consumer.Received += async (_, args) =>
         {
-            using var scope = scopeFactory.CreateScope();
-            var consumer =
+            Console.WriteLine(">>> RabbitMQ message RECEIVED");
+
+            using var scope = _scopeFactory.CreateScope();
+
+            var handler =
                 scope.ServiceProvider.GetRequiredService<IRabbitMqConsumer<TEvent>>();
 
             try
             {
-                var message = connection.Deserialize<TEvent>(args.Body);
+                var message = _connection.Deserialize<TEvent>(args.Body);
 
-                // Executes business logic
-                await consumer.HandleAsync(message, stoppingToken);
+                await handler.HandleAsync(message, stoppingToken);
 
-                // Ack in case of success
-                channel.BasicAck(args.DeliveryTag, multiple: false);
+                channel.BasicAck(args.DeliveryTag, false);
             }
-            catch (Exception ex)
+            catch
             {
-                // Conditioned requeue - TODO: add DLQ
-                var shouldRequeue =
-                    ex is TimeoutException ||
-                    ex is TaskCanceledException ||
-                    ex is OperationCanceledException;
-
-                channel.BasicNack(
-                    args.DeliveryTag,
-                    multiple: false,
-                    requeue: shouldRequeue
-                );
+                channel.BasicNack(args.DeliveryTag, false, false);
             }
         };
 
         channel.BasicConsume(
-            queue: queueName,
+            queue: _config.QueueName,
             autoAck: false,
-            consumer: asyncConsumer
-        );
+            consumer: consumer);
 
-        return Task.CompletedTask;
+        await Task.Delay(Timeout.Infinite, stoppingToken);
     }
 }
