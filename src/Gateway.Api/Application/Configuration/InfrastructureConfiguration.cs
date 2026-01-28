@@ -2,11 +2,8 @@
 using Gateway.Api.Domain.Interfaces;
 using Gateway.Api.Infrastructure.Configurations;
 using Gateway.Api.Infrastructure.Database;
-using Gateway.Api.Infrastructure.Messaging.Consumers;
-using Gateway.Api.Infrastructure.Messaging.Hosting;
 using Gateway.Api.Infrastructure.Messaging.RabbitMq;
 using Gateway.Api.Infrastructure.Repositories;
-using Gateway.Api.Presentation.Integration.Events.Inventory;
 using Microsoft.EntityFrameworkCore;
 
 namespace Gateway.Api.Application.Configuration;

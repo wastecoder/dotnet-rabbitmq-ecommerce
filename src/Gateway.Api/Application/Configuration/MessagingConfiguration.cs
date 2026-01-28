@@ -14,6 +14,11 @@ public static class MessagingConfiguration
             ["stock.updated"]
         );
 
+        services.AddRabbitMqConsumer<StockLowEvent, StockLowConsumer>(
+            "gateway.metrics.stock",
+            ["stock.low"]
+        );
+
         return services;
     }
 }
