@@ -19,4 +19,24 @@ public class OrderEventPublisher(IRabbitMqProducer producer)
 
         await producer.PublishAsync("order.created", createdEvent);
     }
+
+    public async Task PublishOrderConfirmedAsync(Order order)
+    {
+        var @event = new OrderConfirmedEvent(
+            order.Id,
+            DateTimeOffset.UtcNow
+        );
+
+        await producer.PublishAsync("order.confirmed", @event);
+    }
+
+    public async Task PublishOrderCancelledAsync(Order order)
+    {
+        var @event = new OrderCanceledEvent(
+            order.Id,
+            DateTimeOffset.UtcNow
+        );
+
+        await producer.PublishAsync("order.cancelled", @event);
+    }
 }

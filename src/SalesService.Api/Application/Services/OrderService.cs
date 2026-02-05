@@ -1,6 +1,7 @@
 ﻿using SalesService.Api.Application.Helpers;
 using SalesService.Api.Application.Validation;
 using SalesService.Api.Domain.Entities;
+using SalesService.Api.Domain.Enums;
 using SalesService.Api.Domain.Exceptions;
 using SalesService.Api.Domain.Interfaces;
 using SalesService.Api.Presentation.Contracts.Requests;
@@ -30,19 +31,11 @@ public class OrderService(
         var order = new Order(request.Notes);
         order.AddItems(orderItems);
 
-        // 4. apply stock decrease with rollback only AFTER DB is saved
-        var adjustments = orderItems
-            .Select(i => (i.ProductId, i.Quantity))
-            .ToList();
-
-        // 5. atomic-like operation:
+        // 4. atomic-like operation:
         await repository.AddAsync(order);
         await repository.SaveChangesAsync();
 
-        // 6. apply stock decrease
-        await orderOrchestrator.ExecuteStockAdjustmentsWithRollbackAsync(adjustments);
-
-        // 7. publish event
+        // 6. publish event
         await eventPublisher.PublishOrderCreatedAsync(order);
 
         return order;
@@ -122,5 +115,52 @@ public class OrderService(
 
         await repository.DeleteAsync(order);
         await repository.SaveChangesAsync();
+    }
+
+    public async Task<Order> ConfirmOrderAsync(Guid id)
+    {
+        var order = await repository.GetByIdAsync(id);
+        if (order is null)
+            throw new NotFoundException($"Order with ID {id} was not found.");
+
+        order.SetStatusToConfirmed();
+
+        await repository.UpdateAsync(order);
+        await repository.SaveChangesAsync();
+
+        var adjustments = order.Items
+            .Select(i => (i.ProductId, i.Quantity));
+
+        await orderOrchestrator.ExecuteStockAdjustmentsWithRollbackAsync(adjustments);
+
+        await eventPublisher.PublishOrderConfirmedAsync(order);
+
+        return order;
+    }
+
+    public async Task<Order> CancelOrderAsync(Guid id)
+    {
+        var order = await repository.GetByIdAsync(id);
+        if (order is null)
+            throw new NotFoundException($"Order with ID {id} was not found.");
+
+        var shouldRollbackStock = order.Status == OrderStatus.Confirmed;
+
+        order.SetStatusToCancelled();
+
+        await repository.UpdateAsync(order);
+        await repository.SaveChangesAsync();
+
+        if (shouldRollbackStock)
+        {
+            var rollback = order.Items
+                .Select(i => (i.ProductId, -i.Quantity));
+
+            await orderOrchestrator.ExecuteStockAdjustmentsWithRollbackAsync(rollback);
+        }
+
+        await eventPublisher.PublishOrderCancelledAsync(order);
+
+        return order;
     }
 }

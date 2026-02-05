@@ -50,4 +50,18 @@ public class OrdersController(IOrderService service, IMapper mapper) : Controlle
         await service.SoftDeleteOrderAsync(id);
         return NoContent();
     }
+
+    [HttpPatch("{id:guid}/confirm")]
+    public async Task<ActionResult<OrderResponse>> Confirm(Guid id)
+    {
+        var confirmed = await service.ConfirmOrderAsync(id);
+        return Ok(ApiResponseFactory.Updated(mapper.Map<OrderResponse>(confirmed)));
+    }
+
+    [HttpPatch("{id:guid}/cancel")]
+    public async Task<ActionResult<OrderResponse>> Cancel(Guid id)
+    {
+        var cancelled = await service.CancelOrderAsync(id);
+        return Ok(ApiResponseFactory.Updated(mapper.Map<OrderResponse>(cancelled)));
+    }
 }

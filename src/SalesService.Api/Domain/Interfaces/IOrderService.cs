@@ -10,4 +10,6 @@ public interface IOrderService
     Task<IEnumerable<Order>> GetAllOrdersAsync();
     Task<Order> UpdateOrderAsync(Guid id, CreateOrderRequest request);
     Task SoftDeleteOrderAsync(Guid id);
+    Task<Order> ConfirmOrderAsync(Guid id);
+    Task<Order> CancelOrderAsync(Guid id);
 }

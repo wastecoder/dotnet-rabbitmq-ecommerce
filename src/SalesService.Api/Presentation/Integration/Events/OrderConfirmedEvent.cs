@@ -2,5 +2,5 @@
 
 public record OrderConfirmedEvent(
     Guid OrderId,
-    DateTime ConfirmedAt
+    DateTimeOffset ConfirmedAt
 );

@@ -2,6 +2,5 @@
 
 public record OrderCanceledEvent(
     Guid OrderId,
-    DateTime CanceledAt,
-    string? Reason
+    DateTimeOffset CanceledAt
 );
