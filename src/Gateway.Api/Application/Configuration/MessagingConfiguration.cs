@@ -25,6 +25,11 @@ public static class MessagingConfiguration
             ["order.created"]
         );
 
+        services.AddRabbitMqConsumer<OrderConfirmedEvent, OrderConfirmedConsumer>(
+            "gateway.metrics.order",
+            ["order.confirmed"]
+        );
+
         return services;
     }
 }
